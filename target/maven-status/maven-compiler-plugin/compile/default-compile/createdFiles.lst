@@ -1,0 +1,7 @@
+com/trade/dto/Currency.class
+com/trade/TradeApplication.class
+com/trade/rest/TradeRestClient.class
+com/trade/dto/Root.class
+com/trade/rest/TradeController.class
+com/trade/dto/Stock.class
+com/trade/dto/Stocks.class
