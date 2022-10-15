@@ -1,0 +1,46 @@
+name: CI/CD Watchlist App
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+#First we will see the application build or not , then we will deploy in EC2
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+  Deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy in EC2
+        env:
+            PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
+            HOSTNAME : ${{ secrets.HOSTNAME  }}
+            USER_NAME : ${{ secrets.USER_NAME  }}
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+            #Now we have got the access of EC2 and we will start the deploy .
+           sudo systemctl start mariadb.service &&
+           cd /home/ec2-user/poc/ &&
+           git clone -b tradeservice git@github.com:netuser19/AWS_Tradewatch_Service.git &&
+           cd AWS_Tradewatch_Service &&
+           mvn package &&
+           ls -lrt &&
+           cd target/ &&
+           (java -jar trade-0.0.1-SNAPSHOT.war &> /tmp/trade_service.log &) &&
+           cd /home/ec2-user/poc &&
+           git clone git@github.com:netuser19/AWS_Tradewatch_UI.git &&
+           cd AWS_Tradewatch_UI/ &&
+           npm install &&
+           npm start &> /tmp/trade_ui.log &
+           echo "trade UI started"
+          '
